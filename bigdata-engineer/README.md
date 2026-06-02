@@ -13,4 +13,4 @@
 
 ## 사용 라이브러리
 
-pandas, numpy, scikit-learn, scipy, statsmodels
+pandas, numpy, seaboran, scikit-learn, scipy
