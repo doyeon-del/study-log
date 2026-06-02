@@ -2,6 +2,33 @@
 
 검색 불가 환경 대비. 막히면 `help(객체)`, `dir(객체)`, `print(객체.__doc__)`.
 
+## 시험 환경에서 사용 가능한 코드 
+
+#### shift나 tab 누르면 아래 정보가 뜨긴 함.
+
+```python
+
+# Pandas ================================================
+#dir을 통해, 한 객체에서  사용 가능한 함수 확인
+
+import pandas as pd
+print(dir(pd))
+
+# ex) df 안에서 활용할 수 있는 기능은?
+print(dir(pd.DataFrame))
+
+# help 함수 활용 -> df 결측치 drop을 어떻게 사용했더라? 
+print(help(pd.DataFrame.drop))
+
+
+# Sklearn ================================================
+#sklearn.__all__ 을 활용! 
+import sklearn
+print(sklearn.__all__)
+
+
+```
+
 ## 작업 1유형 — 전처리 / 기술통계
 
 ```python
