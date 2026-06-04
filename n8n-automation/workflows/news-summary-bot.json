@@ -1,0 +1,154 @@
+{
+  "name": "AI 뉴스 한국어 요약 봇",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            { "field": "days", "triggerAtHour": 8 }
+          ]
+        }
+      },
+      "id": "11111111-1111-1111-1111-111111111111",
+      "name": "매일 8시",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://www.technologyreview.com/topic/artificial-intelligence/feed/",
+        "options": {}
+      },
+      "id": "22222222-2222-2222-2222-222222222222",
+      "name": "RSS Read",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.1,
+      "position": [220, 300]
+    },
+    {
+      "parameters": {
+        "maxItems": 3
+      },
+      "id": "33333333-3333-3333-3333-333333333333",
+      "name": "상위 3건",
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [440, 300]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-sonnet-4-6",
+          "mode": "list"
+        },
+        "options": {}
+      },
+      "id": "44444444-4444-4444-4444-444444444444",
+      "name": "Anthropic Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [640, 480]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=다음은 영어로 된 AI 뉴스 기사다. 한국어로 번역·요약하라.\n\n[원문 제목] {{ $json.title }}\n[원문 링크] {{ $json.link }}\n[본문]\n{{ ($json.content || $json.contentSnippet || '').toString().slice(0, 6000) }}\n\n아래 형식 그대로, 한국어로 출력하라(마크다운):\n\n### (기사 제목을 자연스러운 한국어로)\n- 핵심 1\n- 핵심 2\n- 핵심 3\n왜 중요한가: (한 문장)\n원문: {{ $json.link }}\n\n규칙:\n- 사실 중심으로, 과장·홍보 어투 금지.\n- 본문에 없는 내용을 지어내지 말 것.\n- 군더더기 인사말 없이 위 형식만 출력."
+      },
+      "id": "55555555-5555-5555-5555-555555555555",
+      "name": "한국어 번역·요약",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [640, 300]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// 앞 노드(LLM Chain)의 모든 item을 받아 메일 본문 하나로 합친다\nconst blocks = $input.all().map(i => i.json.text).join('\\n\\n----------------------\\n\\n');\nconst today = new Date().toISOString().slice(0, 10);\n\nreturn [{\n  json: {\n    subject: `[AI 뉴스 요약] MIT Technology Review ${today}`,\n    body: `오늘의 AI 뉴스 요약 (MIT Technology Review)\\n\\n${blocks}\\n\\n— n8n 자동 생성`\n  }\n}];"
+      },
+      "id": "66666666-6666-6666-6666-666666666666",
+      "name": "메일 본문 합치기",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [860, 300]
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "sendTo": "받는사람-이메일@example.com",
+        "subject": "={{ $json.subject }}",
+        "message": "={{ $json.body }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "77777777-7777-7777-7777-777777777777",
+      "name": "Gmail 전송",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [1080, 200]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "여기에_본인_스프레드시트_선택",
+          "mode": "list"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "시트1",
+          "mode": "list"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "날짜": "={{ $now.toFormat('yyyy-LL-dd') }}",
+            "제목": "={{ $('상위 3건').item.json.title }}",
+            "링크": "={{ $('상위 3건').item.json.link }}",
+            "요약": "={{ $json.text }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "88888888-8888-8888-8888-888888888888",
+      "name": "Google Sheets 저장",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [1080, 420]
+    }
+  ],
+  "connections": {
+    "매일 8시": {
+      "main": [[{ "node": "RSS Read", "type": "main", "index": 0 }]]
+    },
+    "RSS Read": {
+      "main": [[{ "node": "상위 3건", "type": "main", "index": 0 }]]
+    },
+    "상위 3건": {
+      "main": [[{ "node": "한국어 번역·요약", "type": "main", "index": 0 }]]
+    },
+    "Anthropic Chat Model": {
+      "ai_languageModel": [[{ "node": "한국어 번역·요약", "type": "ai_languageModel", "index": 0 }]]
+    },
+    "한국어 번역·요약": {
+      "main": [[
+        { "node": "메일 본문 합치기", "type": "main", "index": 0 },
+        { "node": "Google Sheets 저장", "type": "main", "index": 0 }
+      ]]
+    },
+    "메일 본문 합치기": {
+      "main": [[{ "node": "Gmail 전송", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateId": "studylog-news-summary-bot"
+  }
+}

@@ -7,5 +7,5 @@
 | 디렉토리 | 내용 |
 | --- | --- |
 | [`bigdata-engineer/`](bigdata-engineer) | 빅데이터분석기사 실기 준비 코드 |
+| [`n8n-automation/`](n8n-automation) | n8n으로 AI 자동화 워크플로우 — 개념 중심 학습 노트 |
 
-- 학습/연습 목적의 아카이브. 완성된 결과물(포트폴리오)은 별도 레포에서 관리한다.
